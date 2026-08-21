@@ -6,11 +6,14 @@
 
 package app.crimera.patches.instagram.misc.stories.customiseStoryTimestamp
 
+import app.crimera.patches.instagram.entity.decoder.MEDIA_CLASS_NAME
+import app.crimera.patches.instagram.entity.decoder.decoderEntity
 import app.crimera.patches.instagram.misc.settings.settingsPatch
 import app.crimera.patches.instagram.utils.Constants.COMPATIBILITY_INSTAGRAM
 import app.crimera.patches.instagram.utils.Constants.PATCHES_DESCRIPTOR
 import app.crimera.patches.instagram.utils.enableSettings
 import app.morphe.patcher.Fingerprint
+import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructionsWithLabels
 import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
 import app.morphe.patcher.opcode
@@ -32,11 +35,14 @@ val customiseStoryTimestampPatch =
         name = "Customise story timestamp",
         description = "Customise the timestamp that shows when the story was posted",
     ) {
-        dependsOn(settingsPatch)
+        dependsOn(settingsPatch, decoderEntity)
 
         compatibleWith(COMPATIBILITY_INSTAGRAM)
 
         execute {
+            val reelItemClassName = "Lcom/instagram/model/reels/ReelItem;"
+            val reelItemMediaField = mutableClassDefBy { it.type == reelItemClassName }.fields.last { it.type == MEDIA_CLASS_NAME }
+
             ReelItemTimestampFormatMethodFingerprint.method.apply {
                 val longToDoubleIndex = ReelItemTimestampFormatMethodFingerprint.instructionMatches.first().index
                 val longToDoubleInstruction = getInstruction<TwoRegisterInstruction>(longToDoubleIndex)
@@ -52,6 +58,20 @@ val customiseStoryTimestampPatch =
                     return-object v$dummyRegister
                     """.trimIndent(),
                     ExternalLabel("piko", longToDoubleInstruction),
+                )
+
+                val returnObjectIndex = indexOfFirstInstruction(Opcode.RETURN_OBJECT)
+                val returnInstruction = getInstruction(returnObjectIndex)
+                val returnRegister = returnInstruction.registersUsed[0]
+                val freeRegister = if (dummyRegister == returnRegister) postedTimestampRegister else dummyRegister
+
+                addInstructions(
+                    returnObjectIndex,
+                    """
+                    iget-object v$freeRegister, p0, $reelItemMediaField
+                    invoke-static {v$returnRegister, v$freeRegister}, ${PATCHES_DESCRIPTOR}/story/StoryTimestamp;->addMentionIndicator(Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/String;
+                    move-result-object v$returnRegister
+                    """.trimIndent()
                 )
 
                 enableSettings("customiseStoryTimestamp")
