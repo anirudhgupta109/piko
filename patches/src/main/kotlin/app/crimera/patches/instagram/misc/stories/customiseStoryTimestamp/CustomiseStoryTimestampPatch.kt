@@ -19,6 +19,8 @@ import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
 import app.morphe.patcher.opcode
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patcher.util.smali.ExternalLabel
+import app.morphe.util.indexOfFirstInstruction
+import app.morphe.util.registersUsed
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.instruction.TwoRegisterInstruction
 
@@ -61,8 +63,7 @@ val customiseStoryTimestampPatch =
                 )
 
                 val returnObjectIndex = indexOfFirstInstruction(Opcode.RETURN_OBJECT)
-                val returnInstruction = getInstruction(returnObjectIndex)
-                val returnRegister = returnInstruction.registersUsed[0]
+                val returnRegister = getInstruction(returnObjectIndex).registersUsed[0]
                 val freeRegister = if (dummyRegister == returnRegister) postedTimestampRegister else dummyRegister
 
                 addInstructions(
