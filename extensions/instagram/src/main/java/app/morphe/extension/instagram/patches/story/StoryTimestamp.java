@@ -9,9 +9,13 @@ package app.morphe.extension.instagram.patches.story;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.util.HashSet;
 
 import app.morphe.extension.instagram.utils.Pref;
 import app.morphe.extension.shared.Logger;
+import app.morphe.extension.instagram.settings.SettingsStatus;
+import app.morphe.extension.instagram.entity.MediaData;
+import app.morphe.extension.instagram.entity.UserData;
 
 public class StoryTimestamp {
     private static String CUSTOMISE_STORY_TIMESTAMP;
@@ -61,5 +65,23 @@ public class StoryTimestamp {
         }
 
         return formatedTS;
+    }
+
+    public static String addMentionIndicator(String originalTimestamp, Object mediaObject) {
+        try {
+            if (Pref.viewStoryMentions() && SettingsStatus.viewStoryMentions) {
+                HashSet<UserData> mentionSet = new MediaData(mediaObject).getMentionSet();
+                if (mentionSet != null && !mentionSet.isEmpty()) {
+                    int count = mentionSet.size();
+                    String mentionText = count == 1 ? " • @1 mention" : " • @" + count + " mentions";
+
+                    if (originalTimestamp == null) {
+                        return mentionText.replace(" • ", "");
+                    }
+                    return originalTimestamp + mentionText;
+                }
+            }
+        } catch (Exception e) {}
+        return originalTimestamp;
     }
 }
