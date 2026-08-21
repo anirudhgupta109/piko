@@ -363,4 +363,9 @@
     <string name="piko_media_like">like</string>
     <string name="piko_media_link">link</string>
     <string name="piko_media_activity">activity</string>
+    <string name="piko_story_mentions_indicator_style">Story mentions indicator</string>
+    <string name="piko_story_mentions_indicator_style_desc">Change how hidden mentions are displayed</string>
+    <string name="piko_array_story_mentions_indicator_hidden_default">Don\'t show on story view</string>
+    <string name="piko_array_story_mentions_indicator_count">\@5 mentions</string>
+    <string name="piko_array_story_mentions_indicator_text">Hidden Mentions</string>
 </resources>

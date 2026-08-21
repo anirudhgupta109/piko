@@ -70,10 +70,20 @@ public class StoryTimestamp {
     public static String addMentionIndicator(String originalTimestamp, Object mediaObject) {
         try {
             if (Pref.viewStoryMentions() && SettingsStatus.viewStoryMentions) {
+                String style = Pref.storyMentionsIndicatorStyle();
+                if ("default".equals(style)) {
+                    return originalTimestamp;
+                }
+
                 HashSet<UserData> mentionSet = new MediaData(mediaObject).getMentionSet();
                 if (mentionSet != null && !mentionSet.isEmpty()) {
-                    int count = mentionSet.size();
-                    String mentionText = count == 1 ? " • @1 mention" : " • @" + count + " mentions";
+                    String mentionText;
+                    if ("text".equals(style)) {
+                        mentionText = " • Hidden Mentions";
+                    } else {
+                        int count = mentionSet.size();
+                        mentionText = count == 1 ? " • @1 mention" : " • @" + count + " mentions";
+                    }
 
                     if (originalTimestamp == null) {
                         return mentionText.replace(" • ", "");
