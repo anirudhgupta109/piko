@@ -15,9 +15,13 @@ import android.text.format.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.util.HashSet;
 
 import app.morphe.extension.instagram.utils.Pref;
 import app.morphe.extension.shared.Logger;
+import app.morphe.extension.instagram.entity.MediaData;
+import app.morphe.extension.instagram.entity.UserData;
+import app.morphe.extension.instagram.settings.SettingsStatus;
 import app.morphe.extension.shared.Utils;
 
 public class StoryTimestamp {
@@ -80,5 +84,33 @@ public class StoryTimestamp {
         }
 
         return formatedTS;
+    }
+
+    public static String addMentionIndicator(String originalTimestamp, Object mediaObject) {
+        try {
+            if (Pref.viewStoryMentions() && SettingsStatus.viewStoryMentions) {
+                String style = Pref.storyMentionsIndicatorStyle();
+                if ("default".equals(style)) {
+                    return originalTimestamp;
+                }
+
+                HashSet<UserData> mentionSet = new MediaData(mediaObject).getMentionSet();
+                if (mentionSet != null && !mentionSet.isEmpty()) {
+                    String mentionText;
+                    if ("text".equals(style)) {
+                        mentionText = " • Hidden Mentions";
+                    } else {
+                        int count = mentionSet.size();
+                        mentionText = count == 1 ? " • @1 mention" : " • @" + count + " mentions";
+                    }
+
+                    if (originalTimestamp == null) {
+                        return mentionText.replace(" • ", "");
+                    }
+                    return originalTimestamp + mentionText;
+                }
+            }
+        } catch (Exception e) {}
+        return originalTimestamp;
     }
 }
