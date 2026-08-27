@@ -593,13 +593,25 @@ public class ScreenBuilder {
             );
         }
         if (SettingsStatus.viewStoryMentions) {
-            addPreference(
-                    helper.switchPreference(
-                            str("piko_view_story_mentions"),
-                            "",
-                            Settings.VIEW_STORY_MENTIONS
-                    )
+            Preference vsmPref = helper.switchPreference(
+                    str("piko_view_story_mentions"),
+                    "",
+                    Settings.VIEW_STORY_MENTIONS
             );
+            addPreference(vsmPref);
+            
+            Preference indicatorStylePref = helper.listPreference(
+                    str("piko_story_mentions_indicator_style"),
+                    str("piko_story_mentions_indicator_style_desc"),
+                    Settings.STORY_MENTIONS_INDICATOR_STYLE
+            );
+            indicatorStylePref.setEnabled(Pref.viewStoryMentions());
+            vsmPref.setOnPreferenceChangeListener((preference, newValue) -> {
+                boolean res = helper.setValue(preference, newValue);
+                indicatorStylePref.setEnabled((Boolean) newValue);
+                return res;
+            });
+            addPreference(indicatorStylePref);
         }
         if (SettingsStatus.disableStoryFlipping) {
             addPreference(

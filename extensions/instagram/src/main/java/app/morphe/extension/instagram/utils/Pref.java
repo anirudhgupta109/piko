@@ -211,6 +211,10 @@ public class Pref {
         return SharedPref.getBooleanPref(Settings.VIEW_STORY_MENTIONS);
     }
 
+    public static String storyMentionsIndicatorStyle() {
+        return SharedPref.getStringPref(Settings.STORY_MENTIONS_INDICATOR_STYLE);
+    }
+
     public static String customiseStoryTimestamp() {
         return SharedPref.getStringPref(Settings.CUSTOMISE_STORY_TIMESTAMP);
     }

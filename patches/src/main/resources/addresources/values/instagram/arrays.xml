@@ -238,5 +238,15 @@
         <item>enable</item>
         <item>disable</item>
     </string-array>
+    <string-array name="piko_array_story_mentions_indicator_style">
+        <item>@string/piko_array_story_mentions_indicator_hidden_default</item>
+        <item>@string/piko_array_story_mentions_indicator_count</item>
+        <item>@string/piko_array_story_mentions_indicator_text</item>
+    </string-array>
 
+    <string-array name="piko_array_story_mentions_indicator_style_val">
+        <item>default</item>
+        <item>count</item>
+        <item>text</item>
+    </string-array>
 </resources>
