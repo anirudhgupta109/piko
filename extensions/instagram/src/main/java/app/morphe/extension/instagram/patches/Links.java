@@ -25,6 +25,7 @@ import app.morphe.extension.shared.ShareLinkSanitizer;
 import app.morphe.extension.shared.Utils;
 import app.morphe.extension.instagram.constants.PostType;
 import app.morphe.extension.instagram.constants.Constants;
+import app.morphe.extension.instagram.patches.story.StorySeenRequestScope;
 import app.morphe.extension.crimera.PikoUtils;
 
 import app.morphe.extension.instagram.settings.ActivityHook;
@@ -79,7 +80,10 @@ public class Links {
     }
 
     public static boolean setStorySeen(boolean seenStatus){
-        return Pref.viewStoriesAnonymously() ? true:seenStatus;
+        return StorySeenRequestScope.resolveSeenStatus(
+                seenStatus,
+                Pref.viewStoriesAnonymously()
+        );
     }
 
     public static boolean shouldBlockOnboardingScreen(String appId) {
@@ -113,15 +117,16 @@ public class Links {
        boolean shouldBlockUri = false;
         try {
             if (uri != null && uri.getPath() != null) {
-                String host = uri.getHost();
+                String host = uri.getHost() != null ? uri.getHost() : "";
                 String path = uri.getPath();
 
                 if (host.contains("graph.instagram.com")
-                        || host.contains("graph.facebook.com")
-                        || path.contains("/logging_client_events")) {
+                        || host.contains("graph.facebook.com")) {
                     shouldBlockUri = DISABLE_ANALYTICS;
                 } else if (path.contains("/api/v2/media/seen/")) {
-                    shouldBlockUri = Pref.viewStoriesAnonymously();
+                    shouldBlockUri = Pref.viewStoriesAnonymously()
+                            && !StorySeenRequestScope.isActive();
+                    StorySeenRequestScope.onStorySeenRequest(shouldBlockUri);
                 } else if (path.contains("/heartbeat_and_get_viewer_count/")) {
                     shouldBlockUri = Pref.viewLiveAnonymously();
                 } else if (path.contains("/feed/reels_tray/")

@@ -88,6 +88,11 @@
     <string name="piko_fbi_following_each_other">Following each other</string>
     <string name="piko_friendship_status">Friendship status</string>
     <string name="piko_view_story_mentions">View story mentions</string>
+    <string name="piko_story_mentions_indicator_style">Story mentions indicator</string>
+    <string name="piko_story_mentions_indicator_style_desc">Change how hidden mentions are displayed</string>
+    <string name="piko_array_story_mentions_indicator_hidden_default">Don\'t show on story view</string>
+    <string name="piko_array_story_mentions_indicator_count">\@5 mentions</string>
+    <string name="piko_array_story_mentions_indicator_text">Hidden Mentions</string>
     <string name="piko_vsm_title">Story mentions</string>
     <string name="piko_vsm_no_mentions">No mentions on this story</string>
     <string name="piko_disable_story_flipping">Disable story flipping</string>
@@ -133,6 +138,7 @@
 
     <!-- Download Media Section -->
     <string name="piko_category_download_media">Download media</string>
+    <string name="piko_category_downloads">Downloads</string>
     <string name="piko_enable_download">Enable download</string>
     <string name="piko_enable_direct_download">Enable direct download</string>
     <string name="piko_enable_direct_download_desc">Downloads the current viewing media without asking for options</string>
@@ -182,6 +188,20 @@
     <string name="piko_hide_navigation_direct">Hide Direct button</string>
     <string name="piko_hide_navigation_search">Hide Search button</string>
     <string name="piko_hide_navigation_create">Hide Create button</string>
+    <string name="piko_category_navigation_tabs">Navigation bar</string>
+    <string name="piko_navigation_tabs_title">Show and reorder tabs</string>
+    <string name="piko_navigation_tabs_summary">Choose visible bottom tabs and drag to reorder them</string>
+    <string name="piko_navigation_startup_tab">App startup tab</string>
+    <string name="piko_navigation_startup_tab_summary">Choose which tab opens when the app starts</string>
+    <string name="piko_navigation_tab_home">Home</string>
+    <string name="piko_navigation_tab_reels">Reels</string>
+    <string name="piko_navigation_tab_messages">Messages</string>
+    <string name="piko_navigation_tab_search">Search</string>
+    <string name="piko_navigation_tab_profile">Profile</string>
+    <string name="piko_navigation_tab_notifications">Notifications</string>
+    <string name="piko_navigation_tab_create">Create</string>
+    <string name="piko_navigation_settings_lockout_title">No Piko settings button</string>
+    <string name="piko_navigation_settings_lockout_message">This setup removes every Piko settings entry from the visible tabs. You can still open Piko settings by long-pressing the app icon and selecting Piko settings.</string>
 
     <!-- Information Section -->
     <string name="piko_category_about">About</string>
@@ -206,6 +226,7 @@
     <string name="piko_import_fail">Import failed</string>
     <string name="piko_restart_app">The app needs to be restarted for the changes to reflect</string>
     <string name="piko_ok">OK</string>
+    <string name="piko_reset">Reset</string>
     <string name="piko_cancel">Cancel</string>
     <string name="piko_deleted">Deleted</string>
     <string name="piko_debug">Piko debug</string>
@@ -241,7 +262,7 @@
     <string name="piko_tap_here">Tap here !!</string>
 
     <!-- Action Bar Section -->
-    <string name="piko_category_action_bar">Action bar customisation</string>
+    <string name="piko_category_action_bar">Action bar</string>
     <string name="piko_action_bar_main_feed">Main feed action bar icons</string>
     <string name="piko_action_bar_user_profile">User profile action bar icons</string>
     <string name="piko_action_bar_chat">Chat action bar icons</string>
@@ -251,6 +272,8 @@
     <string name="piko_action_bar_button_settings_icon">Settings icon</string>
     <string name="piko_action_bar_button_ghost_mode_icon">Ghost mode icon</string>
     <string name="piko_action_bar_button_profile_info_icon">Profile info icon</string>
+    <string name="piko_action_bar_button_create_icon">Create icon</string>
+    <string name="piko_action_bar_button_notifications_icon">Notifications icon</string>
 
     <string name="piko_settings_on_action_bar">Piko settings on action bar</string>
     <string name="piko_settings_on_action_bar_desc">Move Piko settings entry point to main feed action bar</string>
@@ -265,7 +288,7 @@
 
 
     <!-- Story filters -->
-    <string name="piko_category_filter_content">Filter content</string>
+    <string name="piko_category_filter_content">Content filters</string>
 
     <string name="piko_filter_story">Filter Story</string>
 
@@ -363,9 +386,7 @@
     <string name="piko_media_like">like</string>
     <string name="piko_media_link">link</string>
     <string name="piko_media_activity">activity</string>
-    <string name="piko_story_mentions_indicator_style">Story mentions indicator</string>
-    <string name="piko_story_mentions_indicator_style_desc">Change how hidden mentions are displayed</string>
-    <string name="piko_array_story_mentions_indicator_hidden_default">Don\'t show on story view</string>
-    <string name="piko_array_story_mentions_indicator_count">\@5 mentions</string>
-    <string name="piko_array_story_mentions_indicator_text">Hidden Mentions</string>
+    <string name="piko_mark_story_seen">Mark as seen</string>
+    <string name="piko_story_seen_pending">Marking as seen</string>
+    <string name="piko_story_seen_sent">Marked as seen</string>
 </resources>

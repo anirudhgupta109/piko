@@ -814,45 +814,17 @@ public class ScreenBuilder {
     public void buildNavigationSection() {
         if (!(SettingsStatus.hideNavigationButtons)) return;
 
-        //  PreferenceCategory category = addCategory(str("piko_category_hide_navigation_buttons"));
-
         addPreference(
-                helper.switchPreference(
-                        str("piko_hide_navigation_feed"),
-                        "",
-                        Settings.HIDE_NAVIGATION_FEED
+                helper.navigationBarPreference(
+                        str("piko_navigation_tabs_title"),
+                        str("piko_navigation_tabs_summary")
                 )
         );
 
         addPreference(
-                helper.switchPreference(
-                        str("piko_hide_navigation_reels"),
-                        "",
-                        Settings.HIDE_NAVIGATION_REELS
-                )
-        );
-
-        addPreference(
-                helper.switchPreference(
-                        str("piko_hide_navigation_direct"),
-                        "",
-                        Settings.HIDE_NAVIGATION_DIRECT
-                )
-        );
-
-        addPreference(
-                helper.switchPreference(
-                        str("piko_hide_navigation_search"),
-                        "",
-                        Settings.HIDE_NAVIGATION_SEARCH
-                )
-        );
-
-        addPreference(
-                helper.switchPreference(
-                        str("piko_hide_navigation_create"),
-                        "",
-                        Settings.HIDE_NAVIGATION_CREATE
+                helper.navigationStartupPreference(
+                        str("piko_navigation_startup_tab"),
+                        str("piko_navigation_startup_tab_summary")
                 )
         );
     }
@@ -881,13 +853,23 @@ public class ScreenBuilder {
         // rather than triggering new build
         // for every a new flag.
         for(Flag flag : recFlags) {
-            addPreference(
-                    helper.listPreference(
-                            flag.getName(),
-                            flag.getDesc(),
-                            flag.getCode()
-                    )
-            );
+            if (flag.isLongType()) {
+                addPreference(
+                        helper.editTextNumPreference(
+                                flag.getName(),
+                                flag.getDesc(),
+                                flag.getCode()
+                        )
+                );
+            } else {
+                addPreference(
+                        helper.listPreference(
+                                flag.getName(),
+                                flag.getDesc(),
+                                flag.getCode()
+                        )
+                );
+            }
         }
     }
 
@@ -1038,7 +1020,7 @@ public class ScreenBuilder {
         if (SettingsStatus.downloadSection()){
             addPreference(
                     helper.buttonPreference(
-                            str("piko_category_download_media"),
+                            str("piko_category_downloads"),
                             "",
                             Constants.PIKO_FRAGMENT_DOWNLOAD_MEDIA
                     )
@@ -1056,7 +1038,7 @@ public class ScreenBuilder {
         if (SettingsStatus.hideNavigationButtons){
             addPreference(
                     helper.buttonPreference(
-                            str("piko_category_hide_navigation_buttons"),
+                            str("piko_category_navigation_tabs"),
                             "",
                             Constants.PIKO_FRAGMENT_NAV_BTNS
                     )

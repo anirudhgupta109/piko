@@ -1,3 +1,32 @@
+## [3.10.0-dev.8](https://github.com/crimera/piko/compare/v3.10.0-dev.7...v3.10.0-dev.8) (2026-09-14)
+
+### 🐛 Bug Fixes
+
+* **ci:** Import Crowdin translations onto the latest dev ([#1890](https://github.com/crimera/piko/issues/1890)) ([385a8d1](https://github.com/crimera/piko/commit/385a8d1852434f0529d4a017f723ccc5cae4e0b8))
+* **Twitter:** Preserve links when applying custom fonts ([#1889](https://github.com/crimera/piko/issues/1889)) ([f5d1db8](https://github.com/crimera/piko/commit/f5d1db88cb2e1782436604168903347b43d3743c))
+
+### ✨ New Features
+
+* **Instagram:** Update the Direct icon in settings and in the navigation customization window. ([#1888](https://github.com/crimera/piko/issues/1888)) ([7e50716](https://github.com/crimera/piko/commit/7e507162e87e8ac586216fa7562add6bac355d28))
+
+## [3.10.0-dev.7](https://github.com/crimera/piko/compare/v3.10.0-dev.6...v3.10.0-dev.7) (2026-09-13)
+
+### 🐛 Bug Fixes
+
+* **Instagram:** Keep settings switch animations consistent after shortcut launch ([#1883](https://github.com/crimera/piko/issues/1883)) ([6ffb046](https://github.com/crimera/piko/commit/6ffb046f68cf0d82c36d9c9837d695d259838331))
+* **Instagram:** Preserve the startup tab while editing navigation ([#1880](https://github.com/crimera/piko/issues/1880)) ([cb1241f](https://github.com/crimera/piko/commit/cb1241f236801e8b5d58722e7db0b6d12680d08d))
+* **Instagram:** Preserve unobserved theme state ([#1872](https://github.com/crimera/piko/issues/1872)) ([cf7cd66](https://github.com/crimera/piko/commit/cf7cd668dfe554a3a2de016524c88f92e7fb6303))
+* **Instagram:** Skip event dispatch when analytics are disabled ([#1877](https://github.com/crimera/piko/issues/1877)) ([7a44c6d](https://github.com/crimera/piko/commit/7a44c6d8306a1c2ca32502b3497308af8e1677b0))
+* **Instagram:** Sync ghost mode icons when settings change ([#1875](https://github.com/crimera/piko/issues/1875)) ([dc12da8](https://github.com/crimera/piko/commit/dc12da8f03703fb6fa50ce11d009e32754c0761b))
+* **Twitter:** avoid copying editor spans in custom font hook ([c6deb8d](https://github.com/crimera/piko/commit/c6deb8daa5cd1f41a3a368802cf87c6f5dbf2749))
+
+### ✨ New Features
+
+* **Instagram:** Add startup tab selection ([#1869](https://github.com/crimera/piko/issues/1869)) ([d284f62](https://github.com/crimera/piko/commit/d284f629056344bec9351fe86afd73f07ef25818))
+* **Instagram:** Add story seen button ([#1884](https://github.com/crimera/piko/issues/1884)) ([c39e122](https://github.com/crimera/piko/commit/c39e122dbce23d9d603bc73010e0aeaccdfe88bd))
+* **Instagram:** Add visibility controls for create and notification buttons ([#1870](https://github.com/crimera/piko/issues/1870)) ([a1c0866](https://github.com/crimera/piko/commit/a1c0866824ef72cd40b5d03d3ec2a46bf5f8cdaf))
+* **Instagram:** Customize navigation bar ([#1867](https://github.com/crimera/piko/issues/1867)) ([bbd335c](https://github.com/crimera/piko/commit/bbd335ca7764ec99c3c9936e0ffd71723699e627))
+
 ## [3.10.0-dev.6](https://github.com/crimera/piko/compare/v3.10.0-dev.5...v3.10.0-dev.6) (2026-09-10)
 
 ### 🐛 Bug Fixes
