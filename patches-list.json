@@ -1,6 +1,6 @@
 {
   "NOTE": "Do NOT manually edit this file. This file is automatically updated when semantic release (release.yml) runs. Manually editing this file can break your releases and break third party tools that use this file.",
-  "version": "3.10.0-dev.9",
+  "version": "1.0.0-dev.1",
   "patches": [
     {
       "name": "Add ability to copy media link",
@@ -111,8 +111,7 @@
       "default": true,
       "dependencies": [
         "BytecodePatch",
-        "BytecodePatch",
-        "ResourcePatch"
+        "BytecodePatch"
       ],
       "compatiblePackages": [
         {
@@ -140,8 +139,7 @@
       "description": "Blocks the 'This app is out of date' update screen from being shown on launch",
       "default": true,
       "dependencies": [
-        "BytecodePatch",
-        "ResourcePatch"
+        "BytecodePatch"
       ],
       "compatiblePackages": [
         {
@@ -423,7 +421,6 @@
         "BytecodePatch",
         "BytecodePatch",
         "BytecodePatch",
-        "ResourcePatch",
         "BytecodePatch",
         "BytecodePatch"
       ],
@@ -690,8 +687,7 @@
       "description": null,
       "default": true,
       "dependencies": [
-        "BytecodePatch",
-        "ResourcePatch"
+        "BytecodePatch"
       ],
       "compatiblePackages": [
         {
@@ -721,6 +717,7 @@
       "description": "Customise the timestamp that shows when the story was posted",
       "default": true,
       "dependencies": [
+        "BytecodePatch",
         "BytecodePatch"
       ],
       "compatiblePackages": [
@@ -1517,7 +1514,6 @@
       "default": true,
       "dependencies": [
         "BytecodePatch",
-        "ResourcePatch",
         "BytecodePatch",
         "BytecodePatch"
       ],
@@ -2462,8 +2458,7 @@
       "description": "Hides notes tray in DM section",
       "default": true,
       "dependencies": [
-        "BytecodePatch",
-        "ResourcePatch"
+        "BytecodePatch"
       ],
       "compatiblePackages": [
         {
@@ -2607,8 +2602,7 @@
       "description": "Hides the reshare button from both posts and reels.",
       "default": true,
       "dependencies": [
-        "BytecodePatch",
-        "ResourcePatch"
+        "BytecodePatch"
       ],
       "compatiblePackages": [
         {
@@ -2638,8 +2632,7 @@
       "description": "Hides stories tray from main feed.",
       "default": true,
       "dependencies": [
-        "BytecodePatch",
-        "ResourcePatch"
+        "BytecodePatch"
       ],
       "compatiblePackages": [
         {
@@ -2728,7 +2721,6 @@
       "description": "Adds an feature to export and import the token of accounts. This is useful when logging in on your second device or when re-installing piko.",
       "default": true,
       "dependencies": [
-        "ResourcePatch",
         "BytecodePatch",
         "ResourcePatch"
       ],
@@ -2968,7 +2960,6 @@
       "default": true,
       "dependencies": [
         "BytecodePatch",
-        "ResourcePatch",
         "ResourcePatch",
         "BytecodePatch",
         "BytecodePatch"
@@ -3487,8 +3478,7 @@
       "description": "Enable or disable rounding off numbers",
       "default": true,
       "dependencies": [
-        "BytecodePatch",
-        "ResourcePatch"
+        "BytecodePatch"
       ],
       "compatiblePackages": [
         {
@@ -3583,7 +3573,6 @@
         "BytecodePatch",
         "BytecodePatch",
         "BytecodePatch",
-        "ResourcePatch",
         "BytecodePatch",
         "BytecodePatch"
       ],
@@ -3760,8 +3749,7 @@
       "description": null,
       "default": true,
       "dependencies": [
-        "BytecodePatch",
-        "ResourcePatch"
+        "BytecodePatch"
       ],
       "compatiblePackages": [
         {
@@ -3822,7 +3810,6 @@
       "dependencies": [
         "BytecodePatch",
         "BytecodePatch",
-        "ResourcePatch",
         "BytecodePatch"
       ],
       "compatiblePackages": [
