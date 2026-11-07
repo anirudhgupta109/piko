@@ -9,21 +9,29 @@ package app.morphe.extension.instagram.patches.instants;
 import static app.morphe.extension.instagram.utils.IgStr.str;
 
 import android.app.Activity;
+import android.content.res.ColorStateList;
+import android.content.res.TypedArray;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.net.Uri;
+import android.graphics.Color;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.RippleDrawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.text.format.DateFormat;
 import android.util.LruCache;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
+import android.view.accessibility.AccessibilityNodeInfo;
 import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
@@ -41,41 +49,53 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
+import java.time.ZoneId;
 import java.util.Date;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.WeakHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import app.morphe.extension.crimera.PikoUtils;
 import app.morphe.extension.instagram.constants.UI;
 import app.morphe.extension.instagram.settings.preference.widgets.InstagramPreferenceStyle;
+import app.morphe.extension.instagram.settings.preference.widgets.InstagramSearchStyle;
 import app.morphe.extension.instagram.db.PikoInstantsDb;
 import app.morphe.extension.instagram.patches.download.DownloadUtils;
+import app.morphe.extension.instagram.patches.download.DownloadFileNameFormatter;
+import app.morphe.extension.instagram.settings.ActivityHook;
+import app.morphe.extension.instagram.utils.MediaUrls;
+import app.morphe.extension.instagram.utils.Pref;
 import app.morphe.extension.shared.Logger;
 import app.morphe.extension.shared.Utils;
+import app.morphe.extension.shared.ui.SelectionCheck;
 
 /**
  * "Saved Instants" screen: shows every instant captured by {@link InstantsDownloadHook} as a grid of
  * thumbnails grouped by the sender (keyed on a stable user id, labelled by username). Tap a tile for
- * download / open / copy (reusing piko's download pipeline); long-press to remove it. Plain
+ * download / open / copy (reusing piko's download pipeline); long-press to select items. Plain
  * programmatic UI so it has no layout-resource dependency, mirroring DeletedMessagesActivity.
  */
 import android.app.Application;
 
 public final class InstantsVaultActivity {
 
+    private static final Map<Activity, Controller> controllers = new WeakHashMap<>();
+
     private InstantsVaultActivity() {}
 
     public static void setupOnActivity(Activity activity) {
         Controller controller = new Controller(activity);
+        controllers.put(activity, controller);
         controller.setup();
         if (activity != null && activity.getApplication() != null) {
             activity.getApplication().registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks() {
@@ -90,22 +110,39 @@ public final class InstantsVaultActivity {
                     if (a == activity) {
                         a.getApplication().unregisterActivityLifecycleCallbacks(this);
                         controller.onDestroy();
+                        controllers.remove(activity);
                     }
                 }
             });
         }
     }
 
+    public static boolean handleBackPressed(Activity activity) {
+        Controller controller = controllers.get(activity);
+        if (controller == null || !controller.selectionMode) return false;
+        controller.cancelSelection();
+        return true;
+    }
+
     private static final class Controller {
-        private static final String SUBFOLDER = "Instants";
         private static final int COLUMNS = 3;
 
         private final Activity activity;
         private List<String[]> items;
+        private List<String[]> displayedItems;
         private String filter = "";
         private FrameLayout content;
         private EditText searchField;
-        private TextView clearAllButton;
+        private View searchBar;
+        private View backAction;
+        private TextView toolbarTitle;
+        private View selectAllAction;
+        private SelectionCheck selectAllCheck;
+        private View cancelSelectionAction;
+        private Button deleteAction;
+        private boolean selectionMode;
+        private boolean selectionToolbarVisible;
+        private final Set<String> selectedIds = new HashSet<>();
         private float density;
         private int tileSize;
         private ThumbLoader thumbs;
@@ -132,14 +169,17 @@ public final class InstantsVaultActivity {
             final TextView unavailable;
             final String[] row;
             final String thumbUrl;
+            final SelectionCheck check;
             boolean loaded;
 
-            Tile(FrameLayout view, ImageView image, TextView unavailable, String[] row, String thumbUrl) {
+            Tile(FrameLayout view, ImageView image, TextView unavailable, String[] row, String thumbUrl,
+                 SelectionCheck check) {
                 this.view = view;
                 this.image = image;
                 this.unavailable = unavailable;
                 this.row = row;
                 this.thumbUrl = thumbUrl;
+                this.check = check;
             }
         }
 
@@ -162,14 +202,15 @@ public final class InstantsVaultActivity {
             InstagramPreferenceStyle.applySystemBarStyle(activity);
             root.addView(buildToolbar());
             if (!items.isEmpty()) {
-                searchField = buildSearchField();
-                root.addView(searchField);
+                searchBar = buildSearchField();
+                root.addView(searchBar);
             }
 
             content = new FrameLayout(activity);
             content.addOnLayoutChangeListener(contentLayoutListener);
             root.addView(content, new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT, 1));
+                    LinearLayout.LayoutParams.MATCH_PARENT, 0, 1));
+            root.addView(buildDeleteAction());
             rebuildContent();
 
             root.setOnApplyWindowInsetsListener((v, insets) -> {
@@ -186,7 +227,7 @@ public final class InstantsVaultActivity {
                             new androidx.activity.OnBackPressedCallback(true) {
                                 @Override
                                 public void handleOnBackPressed() {
-                                    activity.finish();
+                                    handleBack();
                                 }
                             }
                     );
@@ -196,7 +237,7 @@ public final class InstantsVaultActivity {
             }
 
             if (!backRegistered && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                Api33BackHelper.register(activity, activity::finish);
+                Api33BackHelper.register(activity, this::handleBack);
             }
 
             activity.setContentView(root);
@@ -212,33 +253,53 @@ public final class InstantsVaultActivity {
             }
         }
 
-        /** Search field over the sender's username. Filtering rebuilds the body only — a full
-         *  recreate() would restart every thumbnail fetch on each keystroke. */
-        private EditText buildSearchField() {
+        /** Search field over the sender's username, preserving thumbnails across query changes. */
+        private View buildSearchField() {
+            LinearLayout bar = new LinearLayout(activity);
+            bar.setGravity(Gravity.CENTER_VERTICAL);
+            bar.setLayoutDirection(View.LAYOUT_DIRECTION_LOCALE);
+            GradientDrawable background = new GradientDrawable();
+            background.setColor(InstagramPreferenceStyle.searchBackgroundColor());
+            background.setCornerRadius(dp(12));
+            bar.setBackground(background);
+            ImageView icon = new ImageView(activity);
+            icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
+            icon.setPadding(dp(11), dp(14), dp(11), dp(14));
+            UI.setThemedIcon(icon, UI.DRAWABLE_SEARCH, "igds_color_secondary_text");
+            icon.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+            bar.addView(icon, new LinearLayout.LayoutParams(dp(42), dp(48)));
             EditText search = new EditText(activity);
+            searchField = search;
             search.setSingleLine(true);
             search.setImeOptions(EditorInfo.IME_ACTION_SEARCH);
             search.setHint(str("piko_search_username"));
             search.setHintTextColor(themed("igds_color_secondary_text", 0xFFB0B0B0));
             search.setTextColor(themed("igds_color_primary_text", 0xFFFFFFFF));
             search.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
-            search.setBackgroundColor(themed("igds_color_secondary_background", 0xFF1A1A1A));
-            search.setPadding(dp(14), dp(10), dp(14), dp(10));
+            search.setBackgroundColor(Color.TRANSPARENT);
+            search.setPaddingRelative(0, dp(10), dp(14), dp(10));
+            search.setTextDirection(View.TEXT_DIRECTION_LOCALE);
+            search.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
+            InstagramSearchStyle.applyInputStyle(search);
+            bar.addView(search, new LinearLayout.LayoutParams(0,
+                    LinearLayout.LayoutParams.WRAP_CONTENT, 1));
 
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
             lp.setMargins(dp(12), 0, dp(12), dp(8));
-            search.setLayoutParams(lp);
+            bar.setLayoutParams(lp);
 
             search.addTextChangedListener(new TextWatcher() {
                 @Override public void beforeTextChanged(CharSequence s, int a, int b, int c) { }
                 @Override public void onTextChanged(CharSequence s, int a, int b, int c) { }
                 @Override public void afterTextChanged(Editable s) {
+                    InstagramSearchStyle.removeBackgroundSpans(s);
+                    cancelSelection();
                     filter = s.toString().trim().toLowerCase(Locale.ROOT);
                     rebuildContent();
                 }
             });
-            return search;
+            return bar;
         }
 
         private List<String[]> visibleItems() {
@@ -253,27 +314,40 @@ public final class InstantsVaultActivity {
 
         private void rebuildContent() {
             int controlsVisibility = items.isEmpty() ? View.GONE : View.VISIBLE;
-            if (searchField != null) searchField.setVisibility(controlsVisibility);
-            if (clearAllButton != null) clearAllButton.setVisibility(controlsVisibility);
-            releaseTiles();
-            content.removeAllViews();
+            if (searchBar != null) searchBar.setVisibility(controlsVisibility);
+            if (items.isEmpty()) selectionMode = false;
             List<String[]> visible = visibleItems();
+            if (!visible.isEmpty() && visible.equals(displayedItems)) {
+                updateSelectionUi();
+                return;
+            }
+            displayedItems = new ArrayList<>(visible);
+            Map<String, Tile> reusableTiles = new HashMap<>();
+            for (Tile tile : tiles) reusableTiles.put(tile.row[0], tile);
+            tiles.clear();
+            ui.removeCallbacks(sweep);
+            content.removeAllViews();
 
             if (visible.isEmpty()) {
                 scroll = null;
-                content.addView(centeredMessage(items.isEmpty()
-                        ? str("piko_instants_vault_empty")
-                        : str("piko_instants_no_matches")));
-                return;
-            }
-            scroll = new ScrollView(activity);
-            scroll.addView(buildGroupedBody(visible));
-            content.addView(scroll, new FrameLayout.LayoutParams(
-                    FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
+                content.addView(items.isEmpty()
+                        ? centeredMessage(str("piko_instants_vault_empty"))
+                        : InstagramSearchStyle.createNoResultsView(activity));
+            } else {
+                scroll = new ScrollView(activity);
+                scroll.addView(buildGroupedBody(visible, reusableTiles));
+                content.addView(scroll, new FrameLayout.LayoutParams(
+                        FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
 
-            scroll.setOnScrollChangeListener((v, x, y, ox, oy) -> scheduleSweep());
-            scroll.getViewTreeObserver().addOnGlobalLayoutListener(this::scheduleSweep);
-            scheduleSweep();
+                scroll.setOnScrollChangeListener((v, x, y, ox, oy) -> scheduleSweep());
+                scroll.getViewTreeObserver().addOnGlobalLayoutListener(this::scheduleSweep);
+                scheduleSweep();
+            }
+            for (Tile tile : reusableTiles.values()) {
+                tile.image.setImageBitmap(null);
+                tile.image.setTag(null);
+            }
+            updateSelectionUi();
         }
 
         private void scheduleSweep() {
@@ -362,11 +436,6 @@ public final class InstantsVaultActivity {
             return new File(new File(activity.getCacheDir(), "instants_thumbs"), mediaId + ".jpg");
         }
 
-        private void forget(String mediaId) {
-            drop(mediaId);
-            rebuildContent();
-        }
-
         private void forgetLater(String mediaId) {
             doomed.add(mediaId);
             ui.removeCallbacks(drainDoomed);
@@ -381,6 +450,7 @@ public final class InstantsVaultActivity {
         }
 
         private void drop(String mediaId) {
+            selectedIds.remove(mediaId);
             PikoInstantsDb.getInstance(activity).delete(mediaId);
             File f = cacheFile(mediaId);
             if (f != null) f.delete();
@@ -401,7 +471,7 @@ public final class InstantsVaultActivity {
             return tv;
         }
 
-        private LinearLayout buildGroupedBody(List<String[]> source) {
+        private LinearLayout buildGroupedBody(List<String[]> source, Map<String, Tile> reusableTiles) {
             Map<String, List<String[]>> groups = new LinkedHashMap<>();
             for (String[] row : source) {
                 String userId = row.length > 6 ? row[6] : null;
@@ -435,7 +505,15 @@ public final class InstantsVaultActivity {
                         rlp.leftMargin = gap;
                         body.addView(rowLayout, rlp);
                     }
-                    rowLayout.addView(buildTile(group.get(i), gap));
+                    String[] row = group.get(i);
+                    Tile existing = reusableTiles.remove(row[0]);
+                    if (existing == null) {
+                        rowLayout.addView(buildTile(row, gap));
+                    } else {
+                        ((LinearLayout) existing.view.getParent()).removeView(existing.view);
+                        tiles.add(existing);
+                        rowLayout.addView(existing.view);
+                    }
                 }
             }
             return body;
@@ -473,7 +551,7 @@ public final class InstantsVaultActivity {
                     FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
 
             String thumbUrl = (row[2] != null && !row[2].isEmpty()) ? row[2] : urlOf(row);
-            tiles.add(new Tile(tile, image, unavailable, row, thumbUrl));
+            image.setImageBitmap(thumbs.cached(thumbUrl));
 
             if ("1".equals(row[4])) {
                 TextView badge = new TextView(activity);
@@ -489,9 +567,34 @@ public final class InstantsVaultActivity {
                 tile.addView(badge, blp);
             }
 
-            tile.setOnClickListener(v -> showOptions(row));
+            SelectionCheck check = new SelectionCheck(
+                    InstagramPreferenceStyle.dialogContext(activity), selectionControlDrawable());
+            check.setScaleType(ImageView.ScaleType.FIT_CENTER);
+            check.setImageTintList(ColorStateList.valueOf(Color.WHITE));
+            FrameLayout.LayoutParams checkParams = new FrameLayout.LayoutParams(dp(32), dp(32));
+            checkParams.gravity = Gravity.TOP | Gravity.START;
+            checkParams.setMargins(dp(4), dp(4), dp(4), dp(4));
+            tile.addView(check, checkParams);
+            tiles.add(new Tile(tile, image, unavailable, row, thumbUrl, check));
+            bindSelectionAccessibility(tile, check);
+            tile.setOnClickListener(v -> {
+                if (selectionMode) {
+                    if (!selectedIds.remove(row[0])) selectedIds.add(row[0]);
+                    updateSelectionUi();
+                } else {
+                    showOptions(row);
+                }
+            });
             tile.setOnLongClickListener(v -> {
-                confirm(str("piko_instants_delete_confirm"), str("piko_delete"), () -> forget(row[0]));
+                selectionMode = true;
+                if (searchField != null) {
+                    searchField.clearFocus();
+                    InputMethodManager keyboard = (InputMethodManager)
+                            activity.getSystemService(Activity.INPUT_METHOD_SERVICE);
+                    if (keyboard != null) keyboard.hideSoftInputFromWindow(searchField.getWindowToken(), 0);
+                }
+                selectedIds.add(row[0]);
+                updateSelectionUi();
                 return true;
             });
             return tile;
@@ -503,41 +606,180 @@ public final class InstantsVaultActivity {
 
             ImageView back = new ImageView(activity);
             UI.setThemedIcon(back, UI.DRAWABLE_ARROW_BACK);
-            back.setOnClickListener(v -> activity.finish());
+            back.setOnClickListener(v -> handleBack());
+            backAction = back;
 
             TextView title = new TextView(activity);
+            toolbarTitle = title;
             title.setText(str("piko_view_saved_instants"));
             title.setTextColor(InstagramPreferenceStyle.primaryTextColor());
             InstagramPreferenceStyle.applyToolbarLayout(activity, bar, back, title, false);
             bar.addView(back);
+            LinearLayout selectAll = new LinearLayout(activity);
+            selectAll.setOrientation(LinearLayout.VERTICAL);
+            selectAll.setGravity(Gravity.CENTER);
+            selectAll.setContentDescription(str("piko_all"));
+            selectAllCheck = new SelectionCheck(
+                    InstagramPreferenceStyle.dialogContext(activity), selectionControlDrawable());
+            selectAllCheck.setImageTintList(ColorStateList.valueOf(InstagramPreferenceStyle.primaryTextColor()));
+            selectAll.addView(selectAllCheck, new LinearLayout.LayoutParams(dp(48), dp(48)));
+            TextView allLabel = new TextView(activity);
+            allLabel.setText(str("piko_all"));
+            allLabel.setTextColor(InstagramPreferenceStyle.primaryTextColor());
+            allLabel.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11);
+            LinearLayout.LayoutParams labelParams = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+            labelParams.topMargin = -dp(10);
+            selectAll.addView(allLabel, labelParams);
+            selectAll.setOnClickListener(v -> toggleAll());
+            bindSelectionAccessibility(selectAll, selectAllCheck);
+            selectAllAction = selectAll;
+            bar.addView(selectAll);
             bar.addView(title);
-
-            if (!items.isEmpty()) {
-                TextView clear = new TextView(activity);
-                clearAllButton = clear;
-                clear.setText(str("piko_instants_clear_all"));
-                clear.setTextColor(themed("igds_color_error_or_destructive", 0xFFFF5C5C));
-                clear.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
-                clear.setOnClickListener(v -> confirm(str("piko_instants_clear_all_confirm"), str("piko_instants_clear_all"),
-                        () -> {
-                            PikoInstantsDb db = PikoInstantsDb.getInstance(activity);
-                            db.clearAll();
-                            items = db.getAll();
-                            pruneThumbCache();
-                            rebuildContent();
-                        }));
-                bar.addView(clear);
-            }
+            TextView cancel = new TextView(activity);
+            cancel.setText(str("piko_cancel"));
+            cancel.setTextColor(InstagramPreferenceStyle.primaryTextColor());
+            cancel.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
+            cancel.setGravity(Gravity.CENTER);
+            cancel.setMinWidth(dp(48));
+            cancel.setPadding(dp(8), 0, dp(8), 0);
+            cancel.setOnClickListener(v -> cancelSelection());
+            cancelSelectionAction = cancel;
+            bar.addView(cancel, new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT, dp(48)));
+            bar.setBaselineAligned(false);
             return bar;
         }
 
+        private View buildDeleteAction() {
+            deleteAction = new Button(activity);
+            deleteAction.setText(str("piko_delete"));
+            deleteAction.setAllCaps(false);
+            deleteAction.setTextColor(themed("igds_color_error_or_destructive", 0xFFFF5C5C));
+            deleteAction.setBackgroundTintList(null);
+            GradientDrawable background = new GradientDrawable();
+            background.setColor(InstagramPreferenceStyle.pressedBackgroundColor());
+            background.setCornerRadius(dp(24));
+            deleteAction.setBackground(new RippleDrawable(ColorStateList.valueOf(
+                    InstagramPreferenceStyle.secondaryTextColor() & 0x00ffffff | 0x24000000),
+                    background, null));
+            deleteAction.setStateListAnimator(null);
+            deleteAction.setElevation(0);
+            deleteAction.setMinHeight(dp(48));
+            deleteAction.setMinimumHeight(dp(48));
+            deleteAction.setOnClickListener(v -> confirmDeleteSelected());
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+            params.setMargins(dp(16), dp(8), dp(16), dp(12));
+            deleteAction.setLayoutParams(params);
+            return deleteAction;
+        }
+
+        private void handleBack() {
+            if (selectionMode) cancelSelection();
+            else activity.finish();
+        }
+
+        private void cancelSelection() {
+            selectionMode = false;
+            selectedIds.clear();
+            updateSelectionUi();
+        }
+
+        private void toggleAll() {
+            List<String[]> visible = visibleItems();
+            boolean allSelected = !visible.isEmpty() && selectedIds.size() == visible.size();
+            selectedIds.clear();
+            if (!allSelected) {
+                for (String[] row : visible) selectedIds.add(row[0]);
+            }
+            updateSelectionUi();
+        }
+
+        private void updateSelectionUi() {
+            if (selectionToolbarVisible != selectionMode) {
+                LinearLayout toolbar = (LinearLayout) toolbarTitle.getParent();
+                if (selectionMode) {
+                    toolbar.setGravity(Gravity.TOP);
+                    toolbar.setPadding(dp(16), toolbar.getPaddingTop(), dp(16), toolbar.getPaddingBottom());
+                    toolbar.setMinimumHeight(dp(70));
+                    toolbar.getLayoutParams().height = LinearLayout.LayoutParams.WRAP_CONTENT;
+                    toolbar.requestLayout();
+                    LinearLayout.LayoutParams titleParams =
+                            (LinearLayout.LayoutParams) toolbarTitle.getLayoutParams();
+                    titleParams.height = dp(48);
+                    titleParams.gravity = Gravity.TOP;
+                    titleParams.leftMargin = dp(10);
+                    toolbarTitle.setGravity(Gravity.CENTER_VERTICAL);
+                    toolbarTitle.setLayoutParams(titleParams);
+                } else {
+                    toolbar.setMinimumHeight(0);
+                    InstagramPreferenceStyle.applyToolbarLayout(
+                            activity, toolbar, (ImageView) backAction, toolbarTitle, false);
+                }
+                selectionToolbarVisible = selectionMode;
+            }
+            toolbarTitle.setText(selectionMode
+                    ? String.format(Locale.getDefault(), str("piko_selected_count"), selectedIds.size())
+                    : str("piko_view_saved_instants"));
+            backAction.setVisibility(selectionMode ? View.GONE : View.VISIBLE);
+            selectAllAction.setVisibility(selectionMode ? View.VISIBLE : View.GONE);
+            selectAllCheck.setChecked(!tiles.isEmpty() && selectedIds.size() == tiles.size());
+            cancelSelectionAction.setVisibility(selectionMode ? View.VISIBLE : View.GONE);
+            deleteAction.setVisibility(selectionMode ? View.VISIBLE : View.GONE);
+            deleteAction.setEnabled(!selectedIds.isEmpty());
+            deleteAction.setAlpha(selectedIds.isEmpty() ? 0.5f : 1f);
+            for (Tile tile : tiles) {
+                boolean checked = selectedIds.contains(tile.row[0]);
+                tile.check.setVisibility(selectionMode ? View.VISIBLE : View.GONE);
+                tile.check.setChecked(checked);
+                tile.view.setActivated(checked);
+            }
+        }
+
+        private Drawable selectionControlDrawable() {
+            TypedArray attributes = InstagramPreferenceStyle.dialogContext(activity)
+                    .obtainStyledAttributes(new int[]{android.R.attr.listChoiceIndicatorMultiple});
+            try {
+                return attributes.getDrawable(0);
+            } finally {
+                attributes.recycle();
+            }
+        }
+
+        private void bindSelectionAccessibility(View view, SelectionCheck check) {
+            view.setAccessibilityDelegate(new View.AccessibilityDelegate() {
+                @Override
+                public void onInitializeAccessibilityNodeInfo(View host, AccessibilityNodeInfo info) {
+                    super.onInitializeAccessibilityNodeInfo(host, info);
+                    if (selectionMode) info.setClassName("android.widget.CheckBox");
+                    info.setCheckable(selectionMode);
+                    info.setChecked(selectionMode && check.isChecked());
+                }
+            });
+        }
+
+        private void confirmDeleteSelected() {
+            List<String> ids = new ArrayList<>(selectedIds);
+            if (ids.isEmpty()) return;
+            confirm(String.format(Locale.getDefault(), str("piko_instants_delete_selected_confirm"), ids.size()),
+                    str("piko_delete"), () -> {
+                        for (String id : ids) drop(id);
+                        selectionMode = false;
+                        selectedIds.clear();
+                        rebuildContent();
+                    });
+        }
+
         /** When this instant was captured, or null if the row predates the timestamp column. */
-        private static CharSequence savedOn(String[] row) {
+        private CharSequence savedOn(String[] row) {
             try {
                 long ts = Long.parseLong(row[5]);
                 if (ts <= 0) return null;
-                return str("piko_saved_on") + " "
-                        + new SimpleDateFormat("d MMM yyyy, HH:mm", Locale.getDefault()).format(new Date(ts));
+                Locale locale = activity.getResources().getConfiguration().getLocales().get(0);
+                String skeleton = DateFormat.is24HourFormat(activity) ? "yMMMdHm" : "yMMMdhm";
+                return str("piko_saved_on") + " " + new SimpleDateFormat(
+                        DateFormat.getBestDateTimePattern(locale, skeleton), locale).format(new Date(ts));
             } catch (Exception e) {
                 return null;
             }
@@ -558,22 +800,22 @@ public final class InstantsVaultActivity {
                 return;
             }
             boolean isVideo = "1".equals(row[4]);
+            boolean opensVideo = isVideo && row[3] != null && !row[3].isEmpty();
             CharSequence[] options = new CharSequence[] {
                     str("piko_download_current_media"),
-                    isVideo ? str("piko_open_video_externally") : str("piko_open_image_externally"),
+                    opensVideo ? str("piko_open_video_externally") : str("piko_open_image_externally"),
                     str("piko_copy_media_link"),
             };
             DialogInterface.OnClickListener onPick = (d, which) -> {
                 try {
                     if (which == 0) {
-                        String fileName = "piko_instant_" + row[0] + (isVideo ? ".mp4" : ".jpg");
-                        DownloadUtils.downloadMediaUrl(activity, url, SUBFOLDER, fileName);
+                        long clickedAtMillis = System.currentTimeMillis();
+                        download(row, url, opensVideo, clickedAtMillis);
                     } else if (which == 2) {
-                        Utils.setClipboard(url);
+                        Utils.setClipboard(MediaUrls.forViewing(url));
                         Utils.showToastShort(str("piko_copied_media_link"));
                     } else {
-                        activity.startActivity(Intent.createChooser(
-                                new Intent(Intent.ACTION_VIEW, Uri.parse(url)), null));
+                        ActivityHook.handleUrlIntent(opensVideo, url);
                     }
                 } catch (Exception e) {
                     PikoUtils.logger(e);
@@ -585,6 +827,23 @@ public final class InstantsVaultActivity {
                     .setTitle(saved == null ? str("piko_download_options") : saved)
                     .setItems(options, onPick)
                     .show();
+        }
+
+        private void download(String[] row, String url, boolean isVideo, long clickedAtMillis) throws Exception {
+            long timestampMillis = clickedAtMillis;
+            try {
+                long takenAtMillis = Long.parseLong(row[8]);
+                if (takenAtMillis > 0) timestampMillis = takenAtMillis;
+            } catch (NumberFormatException ignored) {
+                // When the posting time is unavailable, use the click time, not the vault capture time.
+            }
+            DownloadFileNameFormatter.Values values = new DownloadFileNameFormatter.Values(
+                    row[1], row[0], row[9], timestampMillis, isVideo ? "video" : "image", 0, ""
+            );
+            String fileName = DownloadFileNameFormatter.format(
+                    Pref.downloadFileNameTemplate(), values, isVideo ? ".mp4" : ".jpg", ZoneId.systemDefault()
+            );
+            DownloadUtils.downloadMediaUrl(activity, url, DownloadUtils.getSubfolderName(row[1]), fileName);
         }
 
         private void confirm(CharSequence message, String positiveText, Runnable onConfirm) {
@@ -626,11 +885,15 @@ public final class InstantsVaultActivity {
                 cache.evictAll();
             }
 
+            Bitmap cached(String url) {
+                return url == null ? null : cache.get(url);
+            }
+
             void load(String url, String mediaId, ImageView view, OnLoadFailed onFailed) {
                 view.setImageBitmap(null);
                 view.setTag(url);
 
-                Bitmap cached = url == null ? null : cache.get(url);
+                Bitmap cached = cached(url);
                 if (cached != null) {
                     view.setImageBitmap(cached);
                     return;

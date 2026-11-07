@@ -15,6 +15,17 @@
         <item>timeleft</item>
     </string-array>
 
+    <string-array name="piko_array_story_mentions_indicator_style">
+        <item>@string/piko_array_story_mentions_indicator_hidden_default</item>
+        <item>@string/piko_array_story_mentions_indicator_count</item>
+        <item>@string/piko_array_story_mentions_indicator_text</item>
+    </string-array>
+    <string-array name="piko_array_story_mentions_indicator_style_val">
+        <item>default</item>
+        <item>count</item>
+        <item>text</item>
+    </string-array>
+
     <string-array name="piko_array_hidden_chats_taps">
         <item>2</item>
         <item>3</item>
@@ -146,12 +157,16 @@
         <item>@string/piko_action_bar_button_settings_icon</item>
         <item>@string/piko_action_bar_button_ghost_mode_icon</item>
         <item>@string/piko_action_bar_button_jump_oldest_icon</item>
+        <item>@string/piko_action_bar_button_audio_call_icon</item>
+        <item>@string/piko_action_bar_button_video_call_icon</item>
     </string-array>
 
     <string-array name="piko_array_action_bar_chat_val">
         <item>SETTINGS_ICON</item>
         <item>GHOST_MODE_ICON</item>
         <item>JUMP_OLDEST_ICON</item>
+        <item>AUDIO_CALL_ICON</item>
+        <item>VIDEO_CALL_ICON</item>
     </string-array>
 
     <string-array name="piko_array_action_bar_inbox">
@@ -288,15 +303,14 @@
         <item>disable</item>
     </string-array>
 
-    <string-array name="piko_array_story_mentions_indicator_style">
-        <item>@string/piko_array_story_mentions_indicator_hidden_default</item>
-        <item>@string/piko_array_story_mentions_indicator_count</item>
-        <item>@string/piko_array_story_mentions_indicator_text</item>
+    <string-array name="piko_array_hide_save_button_surfaces">
+        <item>@string/piko_download_buttons_feed</item>
+        <item>@string/piko_navigation_tab_reels</item>
     </string-array>
-    <string-array name="piko_array_story_mentions_indicator_style_val">
-        <item>default</item>
-        <item>count</item>
-        <item>text</item>
+
+    <string-array name="piko_array_hide_save_button_surfaces_val">
+        <item>posts</item>
+        <item>reels</item>
     </string-array>
 
 </resources>

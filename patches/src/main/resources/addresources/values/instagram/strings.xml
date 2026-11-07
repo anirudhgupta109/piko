@@ -105,6 +105,7 @@
     <string name="piko_hide_notes_tray_desc">Hides notes tray in DM section</string>
     <string name="piko_hide_group_creation_button_on_sharesheet">Hide group creation button on sharesheet</string>
     <string name="piko_hide_reels_follow_button">Hide Reels follow button</string>
+    <string name="piko_hide_likes">Hide like buttons</string>
     <string name="piko_hide_share_button">Hide share button</string>
     <string name="piko_hide_save_buttons">Hide save buttons</string>
     <string name="piko_hide_reshare_button">Hide reshare button</string>
@@ -132,6 +133,8 @@
     <string name="piko_friendship_status">Friendship status</string>
     <string name="piko_follow_list_non_follower_badge">Show non-followers in Following list</string>
     <string name="piko_follow_list_non_follower_badge_desc">Adds a badge to rows in your own Following list for accounts that don\'t follow you back</string>
+    <string name="piko_resume_reels_after_scrolling">Resume Reels after scrolling</string>
+    <string name="piko_resume_reels_after_scrolling_desc">Continue a Reel from where you left off when you scroll back to it</string>
     <string name="piko_improve_image_viewing">Improve image viewing</string>
     <string name="piko_improve_image_viewing_desc">Fetches max resolution images from server. May reduce performance, increase app data size, or cause the app to switch to an older layout</string>
     <string name="piko_copy_comment">Copy comment</string>
@@ -216,7 +219,7 @@
     <string name="piko_save_media_comment">Save media comment</string>
     <string name="piko_save_media_comment_desc">Adds a button to save media comments on posts and reels</string>
     <string name="piko_enable_direct_download">Enable direct download</string>
-    <string name="piko_enable_direct_download_desc">Download buttons on posts, reels and stories save the current media immediately</string>
+    <string name="piko_enable_direct_download_desc">Tap the download button on posts, reels, or stories to save the current media. If there are multiple media, hold the button to save them all</string>
     <string name="piko_select_media_download">Select media to download</string>
     <string name="piko_download_photo_number">Photo %d</string>
     <string name="piko_download_video_number">Video %d</string>
@@ -242,12 +245,12 @@
     <string name="piko_download_file_name_token_shortcode">Shortcode</string>
     <string name="piko_download_file_name_token_upload_date">Date</string>
     <string name="piko_download_file_name_token_upload_time">Time</string>
+    <string name="piko_download_file_name_token_upload_timestamp">Timestamp</string>
     <string name="piko_download_file_name_token_type">Type</string>
     <string name="piko_download_file_name_token_carousel_index">Carousel</string>
     <string name="piko_download_file_name_token_variant_suffix">Variant</string>
     <string name="piko_download_current_media">Download current media</string>
     <string name="piko_download_as_image">Download as image</string>
-    <string name="piko_saved_at">Saved at %s</string>
     <string name="piko_video_variants">Video variants</string>
     <string name="piko_image_variants">Image variants</string>
     <string name="piko_download_audio">Download audio</string>
@@ -365,6 +368,8 @@
     <string name="piko_action_bar_chat_desc">Action bar icons inside a DM</string>
     <string name="piko_action_bar_inbox">Inbox action bar icons</string>
 
+    <string name="piko_action_bar_button_audio_call_icon">Audio call icon</string>
+    <string name="piko_action_bar_button_video_call_icon">Video call icon</string>
     <string name="piko_action_bar_button_settings_icon">Settings icon</string>
     <string name="piko_action_bar_button_ghost_mode_icon">Ghost mode icon</string>
     <string name="piko_action_bar_button_jump_oldest_icon">Jump to oldest message icon</string>
@@ -473,13 +478,10 @@
     <string name="piko_view_saved_instants">View saved Instants</string>
     <string name="piko_instants_vault_empty">No saved Instants yet. Open some Instants with capture enabled and they\'ll appear here.</string>
     <string name="piko_instants_link_unavailable">Media link not available.</string>
-    <string name="piko_instants_delete_confirm">Remove this saved Instant?</string>
-    <string name="piko_instants_clear_all">Clear all</string>
-    <string name="piko_instants_clear_all_confirm">Remove all saved Instants?</string>
+    <string name="piko_instants_delete_selected_confirm">Remove %d selected Instants?</string>
     <string name="piko_delete">Delete</string>
     <string name="piko_instants_title">Instants</string>
     <string name="piko_search_username">Search by username</string>
-    <string name="piko_instants_no_matches">No saved Instants from that user.</string>
     <string name="piko_saved_on">Saved on</string>
 
     <!-- Save & view deleted (unsent) direct messages -->

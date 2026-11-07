@@ -20,6 +20,7 @@ import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
 import app.morphe.patcher.extensions.InstructionExtensions.instructions
 import app.morphe.patcher.fieldAccess
 import app.morphe.patcher.methodCall
+import app.morphe.patcher.newInstance
 import app.morphe.patcher.patch.BytecodePatchContext
 import app.morphe.patcher.patch.PatchException
 import app.morphe.patcher.patch.bytecodePatch
@@ -85,12 +86,10 @@ private object BadgeStateBuilderFingerprint : Fingerprint(
 private object BadgeEventFingerprint : Fingerprint(
     returnType = "V",
     parameters = listOf("Ljava/lang/String;"),
-    custom = { method, _ ->
-        method.implementation?.instructions?.let { code ->
-            code.any { it.opcode == Opcode.NEW_INSTANCE && it.getReference<TypeReference>()?.type == badgeType } &&
-                code.any { it.opcode == Opcode.NEW_INSTANCE && it.getReference<TypeReference>()?.type == stateType }
-        } == true
-    },
+    filters = listOf(
+        newInstance(stateType),
+        newInstance(badgeType),
+    ),
 )
 
 // The job that works out the badge state again and posts it to the screen.
@@ -98,13 +97,11 @@ private object BadgeJobFingerprint : Fingerprint(
     returnType = "V",
     name = "run",
     parameters = emptyList(),
-    custom = { method, _ ->
-        method.implementation?.instructions?.let { code ->
-            code.any { it.getReference<MethodReference>()?.returnType == stateType } &&
-                code.any { it.opcode == Opcode.NEW_INSTANCE && it.getReference<TypeReference>()?.type == badgeType } &&
-                code.any { it.getReference<MethodReference>()?.name == "post" }
-        } == true
-    },
+    filters = listOf(
+        methodCall(returnType = stateType),
+        newInstance(badgeType),
+        methodCall(name = "post"),
+    ),
 )
 
 // The job that builds the rows of the inbox from its list of chats; the list is the last one before the screen.

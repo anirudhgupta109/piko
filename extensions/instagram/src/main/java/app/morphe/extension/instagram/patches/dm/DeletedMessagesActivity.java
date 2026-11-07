@@ -13,8 +13,10 @@ import android.app.AlertDialog;
 import android.app.Application;
 import android.content.Intent;
 import android.content.res.ColorStateList;
+import android.content.res.TypedArray;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.GradientDrawable;
 import android.graphics.drawable.RippleDrawable;
 import android.graphics.drawable.StateListDrawable;
 import android.net.Uri;
@@ -27,9 +29,9 @@ import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.BaseAdapter;
 import android.widget.Button;
-import android.widget.CheckBox;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -54,11 +56,13 @@ import app.morphe.extension.instagram.constants.Constants;
 import app.morphe.extension.instagram.constants.UI;
 import app.morphe.extension.instagram.db.PikoMessageDb;
 import app.morphe.extension.instagram.patches.download.DownloadUtils;
+import app.morphe.extension.instagram.settings.ActivityHook;
 import app.morphe.extension.instagram.settings.preference.widgets.InstagramPreferenceStyle;
+import app.morphe.extension.instagram.utils.MediaUrls;
 import app.morphe.extension.shared.Logger;
 import app.morphe.extension.shared.Utils;
 import app.morphe.extension.shared.ui.Dim;
-import app.morphe.extension.shared.ui.ListViewDragSelectionController;
+import app.morphe.extension.shared.ui.SelectionCheck;
 
 public final class DeletedMessagesActivity {
 
@@ -80,24 +84,31 @@ public final class DeletedMessagesActivity {
             int position = firstPosition + childIndex;
             if (position >= list.getCount()) break;
             View row = list.getChildAt(childIndex);
-            CheckBox selectionView = row.findViewWithTag("selection");
+            SelectionCheck selectionView = row.findViewWithTag("selection");
             if (selectionView == null) continue;
             boolean checked = list.isItemChecked(position);
             selectionView.setVisibility(selectionMode ? View.VISIBLE : View.GONE);
             selectionView.setChecked(checked);
+            row.setPadding(selectionMode ? Dim.dp8 : Dim.dp16, Dim.dp12, Dim.dp16, Dim.dp12);
             row.setActivated(checked);
         }
     }
 
     private static String guessExtension(String url, String type) {
+        String path = Uri.parse(url).getPath();
         Matcher m = Pattern
-                .compile("(?i)\\.(jpg|jpeg|webp|heic|png|mp4|mov|m4a|aac|mp3|ogg|gif)(?:\\?.*)?$")
-                .matcher(url);
-        if (m.find()) return "." + m.group(1).toLowerCase();
+                .compile("(?i)\\.(jpg|jpeg|webp|heic|png|mp4|mov|m4a|aac|mp3|ogg|gif)$")
+                .matcher(path != null ? path : "");
+        if (m.find()) return "." + m.group(1).toLowerCase(Locale.ROOT);
         if ("voice_media".equals(type) || "audio".equals(type)) return ".m4a";
         if ("video".equals(type)) return ".mp4";
         if ("animated_media".equals(type)) return ".gif";
         return ".jpg";
+    }
+
+    private static boolean isVideo(String url, String type) {
+        if ("video".equals(type) || "clip".equals(type) || "xma_clip".equals(type)) return true;
+        return MediaUrls.isVideo(url);
     }
 
     private static boolean isExpiredMediaUrl(String url) {
@@ -113,8 +124,13 @@ public final class DeletedMessagesActivity {
         }
     }
 
-    private static String mediaLabel(String type) {
+    private static String mediaLabel(String type, String url) {
         if (type == null) return "[" + str("piko_media_unknown") + "]";
+        // Instagram uses these item types for both photos and videos, including saved rows.
+        if (("media".equals(type) || "raven_media".equals(type) || "visual_media".equals(type))
+                && isVideo(url, type)) {
+            type = "video";
+        }
         String label;
         switch (type) {
             case "media":
@@ -181,13 +197,12 @@ public final class DeletedMessagesActivity {
         private View backAction;
         private TextView toolbarTitle;
         private View selectAllAction;
-        private CheckBox selectAllCheck;
+        private SelectionCheck selectAllCheck;
         private TextView selectAllLabel;
         private TextView cancelSelectionAction;
         private Button deleteAction;
         private boolean selectionMode;
         private boolean selectionToolbarVisible;
-        private ListViewDragSelectionController selectionController;
 
         Controller(Activity activity) {
             this.activity = activity;
@@ -207,6 +222,7 @@ public final class DeletedMessagesActivity {
             InstagramPreferenceStyle.applySystemBarStyle(activity);
 
             LinearLayout toolbar = new LinearLayout(activity);
+            toolbar.setBaselineAligned(false);
             toolbar.setBackgroundColor(InstagramPreferenceStyle.backgroundColor());
 
             ImageView back = new ImageView(activity);
@@ -223,27 +239,27 @@ public final class DeletedMessagesActivity {
             LinearLayout selectAll = new LinearLayout(activity);
             selectAll.setOrientation(LinearLayout.VERTICAL);
             selectAll.setGravity(Gravity.CENTER);
+            selectAll.setMinimumWidth(Dim.dp48);
+            selectAll.setMinimumHeight(Dim.dp48);
             selectAll.setVisibility(View.GONE);
             selectAll.setContentDescription(str("piko_all"));
 
-            selectAllCheck = new CheckBox(activity);
-            selectAllCheck.setClickable(false);
-            selectAllCheck.setFocusable(false);
-            selectAllCheck.setMinWidth(0);
-            selectAllCheck.setMinHeight(0);
-            selectAllCheck.setPadding(0, 0, 0, 0);
-            selectAllCheck.setTranslationX(-Dim.dp8 / 4f);
-            selectAllCheck.setButtonTintList(selectionControlTint());
-            selectAll.addView(selectAllCheck, new LinearLayout.LayoutParams(Dim.dp28, Dim.dp28));
+            selectAllCheck = new SelectionCheck(
+                    InstagramPreferenceStyle.dialogContext(activity), selectionControlDrawable());
+            selectAll.addView(selectAllCheck, new LinearLayout.LayoutParams(
+                    Dim.dp48, Dim.dp48));
 
             selectAllLabel = new TextView(activity);
             selectAllLabel.setText(str("piko_all"));
             selectAllLabel.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11);
             selectAllLabel.setTextColor(InstagramPreferenceStyle.primaryTextColor());
-            selectAllLabel.setIncludeFontPadding(false);
             selectAllLabel.setGravity(Gravity.CENTER);
-            selectAll.addView(selectAllLabel);
+            LinearLayout.LayoutParams labelParams = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+            labelParams.topMargin = -InstagramPreferenceStyle.dp(activity, 10);
+            selectAll.addView(selectAllLabel, labelParams);
             selectAll.setOnClickListener(v -> toggleAll());
+            bindSelectionAccessibility(selectAll, selectAllCheck);
             selectAllAction = selectAll;
 
             TextView cancelSelection = new TextView(activity);
@@ -258,7 +274,8 @@ public final class DeletedMessagesActivity {
             cancelSelectionAction = cancelSelection;
 
             toolbar.addView(back);
-            toolbar.addView(selectAll, new LinearLayout.LayoutParams(Dim.dp48, Dim.dp48));
+            toolbar.addView(selectAll, new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
             toolbar.addView(toolbarTitle);
             toolbar.addView(cancelSelection, new LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.WRAP_CONTENT, Dim.dp48));
@@ -278,8 +295,6 @@ public final class DeletedMessagesActivity {
             messageList.setDivider(new ColorDrawable(UI.getThemedColour("igds_color_separator")));
             messageList.setDividerHeight(1);
             messageList.setChoiceMode(ListView.CHOICE_MODE_NONE);
-            selectionController = new ListViewDragSelectionController(
-                    messageList, this::updateSelectionUi);
             messageList.setOnItemClickListener((parent, view, position, id) -> {
                 if (selectionMode) {
                     updateSelectionUi();
@@ -301,10 +316,10 @@ public final class DeletedMessagesActivity {
                     selectionMode = true;
                     messageList.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
                 }
-                selectionController.begin(position);
+                messageList.setItemChecked(position, true);
+                updateSelectionUi();
                 return true;
             });
-            messageList.setOnTouchListener((view, event) -> selectionController.handleTouch(event));
 
             FrameLayout.LayoutParams match = new FrameLayout.LayoutParams(
                     FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT);
@@ -317,15 +332,23 @@ public final class DeletedMessagesActivity {
             deleteAction = new Button(activity);
             deleteAction.setText(str("piko_delete"));
             deleteAction.setAllCaps(false);
-            deleteAction.setTextColor(0xffed4956);
-            deleteAction.setBackgroundTintList(ColorStateList.valueOf(
-                    InstagramPreferenceStyle.pressedBackgroundColor()));
+            deleteAction.setTextColor(UI.getThemedColour("igds_color_error_or_destructive"));
+            deleteAction.setBackgroundTintList(null);
+            GradientDrawable deleteBackground = new GradientDrawable();
+            deleteBackground.setColor(InstagramPreferenceStyle.pressedBackgroundColor());
+            deleteBackground.setCornerRadius(Dim.dp24);
+            deleteAction.setBackground(new RippleDrawable(ColorStateList.valueOf(
+                    InstagramPreferenceStyle.secondaryTextColor() & 0x00ffffff | 0x24000000),
+                    deleteBackground, null));
+            deleteAction.setStateListAnimator(null);
+            deleteAction.setElevation(0);
+            deleteAction.setMinHeight(Dim.dp48);
             deleteAction.setMinimumHeight(Dim.dp48);
             deleteAction.setVisibility(View.GONE);
             deleteAction.setOnClickListener(v -> confirmDeleteSelected());
             LinearLayout.LayoutParams deleteParams = new LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-            deleteParams.setMargins(Dim.dp12, Dim.dp8, Dim.dp12, Dim.dp8);
+            deleteParams.setMargins(Dim.dp16, Dim.dp8, Dim.dp16, Dim.dp12);
             root.addView(deleteAction, deleteParams);
 
             root.setOnApplyWindowInsetsListener((v, insets) -> {
@@ -383,7 +406,6 @@ public final class DeletedMessagesActivity {
         }
 
         void cancelSelection() {
-            selectionController.stop();
             selectionMode = false;
             messageList.clearChoices();
             messageList.setChoiceMode(ListView.CHOICE_MODE_NONE);
@@ -424,26 +446,25 @@ public final class DeletedMessagesActivity {
         private void applySelectionToolbarLayout(boolean selecting) {
             LinearLayout toolbar = (LinearLayout) toolbarTitle.getParent();
             if (!selecting) {
-                toolbarTitle.setTranslationY(0f);
-                cancelSelectionAction.setTranslationY(0f);
-                selectAllAction.setTranslationY(0f);
+                toolbar.setMinimumHeight(0);
                 InstagramPreferenceStyle.applyToolbarLayout(
                         activity, toolbar, (ImageView) backAction, toolbarTitle, false);
                 return;
             }
 
+            toolbar.setGravity(Gravity.TOP);
             toolbar.setPadding(Dim.dp8, toolbar.getPaddingTop(),
-                    Dim.dp8, toolbar.getPaddingBottom());
+                    Dim.dp16, toolbar.getPaddingBottom());
+            toolbar.setMinimumHeight(InstagramPreferenceStyle.dp(activity, 70));
+            toolbar.getLayoutParams().height = LinearLayout.LayoutParams.WRAP_CONTENT;
+            toolbar.requestLayout();
             LinearLayout.LayoutParams titleParams =
                     (LinearLayout.LayoutParams) toolbarTitle.getLayoutParams();
+            titleParams.height = Dim.dp48;
+            titleParams.gravity = Gravity.TOP;
             titleParams.leftMargin = InstagramPreferenceStyle.dp(activity, 10);
+            toolbarTitle.setGravity(Gravity.CENTER_VERTICAL);
             toolbarTitle.setLayoutParams(titleParams);
-
-            float topRowOffset = selectAllLabel.getLineHeight() / 2f;
-            toolbarTitle.setTranslationY(0f);
-            cancelSelectionAction.setTranslationY(0f);
-            selectAllAction.setTranslationY(topRowOffset);
-            selectAllLabel.setTranslationX(selectAllCheck.getTranslationX());
         }
 
         private void confirmDeleteSelected() {
@@ -476,7 +497,7 @@ public final class DeletedMessagesActivity {
             try {
                 final boolean isAudio = "voice_media".equals(type) || "audio".equals(type)
                         || url.matches("(?i).*\\.(m4a|aac|mp3|ogg)(\\?.*)?$");
-                final boolean isVideo = "video".equals(type) || "clip".equals(type) || "xma_clip".equals(type);
+                final boolean isVideo = isVideo(url, type);
                 final boolean isShare = url.contains("instagram.com/reel/")
                         || url.contains("instagram.com/p/") || url.contains("instagram.com/tv/");
 
@@ -497,7 +518,7 @@ public final class DeletedMessagesActivity {
                                 String fileName = "piko_" + messageId + guessExtension(url, type);
                                 DownloadUtils.downloadMediaUrl(activity, url, Constants.DEFAULT_DM_FOLDER, fileName);
                             } else if (which == 2) {
-                                Utils.setClipboard(url);
+                                Utils.setClipboard(MediaUrls.forViewing(url));
                                 Utils.showToastShort(str("piko_copied_media_link"));
                             } else {
                                 Uri uri = Uri.parse(url);
@@ -519,9 +540,17 @@ public final class DeletedMessagesActivity {
                                     } catch (Exception ignored) {}
                                 }
                                 if (!opened) {
-                                    Intent i = new Intent(Intent.ACTION_VIEW, uri);
-                                    if (isAudio) i.setDataAndType(uri, "audio/*");
-                                    activity.startActivity(Intent.createChooser(i, null));
+                                    String path = uri.getPath();
+                                    boolean isImage = "image".equals(type) || (path != null
+                                            && path.matches("(?i).*\\.(jpg|jpeg|png|webp|heic|heif|avif|gif)$"));
+                                    if (!igLink && !isAudio && !isVideo && isImage) {
+                                        ActivityHook.handleUrlIntent(false, url);
+                                    } else {
+                                        Intent i = new Intent(Intent.ACTION_VIEW, uri);
+                                        if (isAudio) i.setDataAndType(uri, "audio/*");
+                                        else if (isVideo && !igLink) i.setDataAndType(uri, "video/*");
+                                        activity.startActivity(Intent.createChooser(i, null));
+                                    }
                                 }
                             }
                         } catch (Exception e) {
@@ -543,17 +572,26 @@ public final class DeletedMessagesActivity {
             return new RippleDrawable(ColorStateList.valueOf(highlight), content, null);
         }
 
-        private ColorStateList selectionControlTint() {
-            return new ColorStateList(
-                    new int[][]{
-                            new int[]{android.R.attr.state_checked},
-                            new int[]{}
-                    },
-                    new int[]{
-                            InstagramPreferenceStyle.selectionColor(),
-                            InstagramPreferenceStyle.secondaryTextColor()
-                    }
-            );
+        private Drawable selectionControlDrawable() {
+            TypedArray attributes = InstagramPreferenceStyle.dialogContext(activity)
+                    .obtainStyledAttributes(new int[]{android.R.attr.listChoiceIndicatorMultiple});
+            try {
+                return attributes.getDrawable(0);
+            } finally {
+                attributes.recycle();
+            }
+        }
+
+        private void bindSelectionAccessibility(View view, SelectionCheck check) {
+            view.setAccessibilityDelegate(new View.AccessibilityDelegate() {
+                @Override
+                public void onInitializeAccessibilityNodeInfo(View host, AccessibilityNodeInfo info) {
+                    super.onInitializeAccessibilityNodeInfo(host, info);
+                    if (selectionMode) info.setClassName("android.widget.CheckBox");
+                    info.setCheckable(selectionMode);
+                    info.setChecked(selectionMode && check.isChecked());
+                }
+            });
         }
 
         private class MessageAdapter extends BaseAdapter {
@@ -565,26 +603,22 @@ public final class DeletedMessagesActivity {
             public View getView(int position, View convertView, ViewGroup parent) {
                 LinearLayout row;
                 LinearLayout contentColumn;
-                CheckBox selectionView;
+                SelectionCheck selectionView;
                 TextView senderView, contentView, metaView;
 
                 if (convertView == null) {
                     row = new LinearLayout(activity);
                     row.setOrientation(LinearLayout.HORIZONTAL);
                     row.setGravity(Gravity.CENTER_VERTICAL);
-                    int pad = Dim.dp8;
-                    row.setPadding(pad * 2, pad, pad * 2, pad);
                     row.setBackground(messageRowBackground());
 
-                    selectionView = new CheckBox(activity);
+                    selectionView = new SelectionCheck(
+                            InstagramPreferenceStyle.dialogContext(activity), selectionControlDrawable());
                     selectionView.setTag("selection");
-                    selectionView.setClickable(false);
-                    selectionView.setFocusable(false);
-                    selectionView.setMinWidth(0);
-                    selectionView.setMinHeight(0);
-                    selectionView.setPadding(0, 0, 0, 0);
-                    selectionView.setButtonTintList(selectionControlTint());
-                    row.addView(selectionView, new LinearLayout.LayoutParams(Dim.dp40, Dim.dp40));
+                    LinearLayout.LayoutParams checkParams = new LinearLayout.LayoutParams(
+                            Dim.dp48, Dim.dp48);
+                    checkParams.setMarginEnd(Dim.dp8);
+                    row.addView(selectionView, checkParams);
 
                     contentColumn = new LinearLayout(activity);
                     contentColumn.setOrientation(LinearLayout.VERTICAL);
@@ -597,6 +631,7 @@ public final class DeletedMessagesActivity {
                     contentView = new TextView(activity);
                     contentView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
                     contentView.setTextColor(InstagramPreferenceStyle.primaryTextColor());
+                    contentView.setPadding(0, Dim.dp4, 0, Dim.dp4);
                     contentView.setTag("c");
 
                     metaView = new TextView(activity);
@@ -621,22 +656,19 @@ public final class DeletedMessagesActivity {
                 String sender    = msg[2];
                 String content   = msg[3];
                 String type      = msg[4];
-                String senderId  = msg.length > 6 ? msg[6] : null;
                 long   timestamp = 0;
                 try { timestamp = Long.parseLong(msg[5]); } catch (Exception ignored) {}
 
                 final String who;
                 if (sender != null && !sender.isEmpty()) {
                     who = "@" + sender;
-                } else if (senderId != null && !senderId.isEmpty()) {
-                    who = "@" + senderId;
                 } else {
                     who = str("piko_unknown");
                 }
                 senderView.setText(who);
                 boolean isMediaUrl = content != null && content.startsWith("http");
                 if (isMediaUrl) {
-                    contentView.setText(mediaLabel(type) + "  ·  "
+                    contentView.setText(mediaLabel(type, content) + "  ·  "
                             + str(isExpiredMediaUrl(content) ? "piko_media_expired" : "piko_tap_to_view"));
                 } else {
                     contentView.setText(content != null && !content.isEmpty() ? content
@@ -646,6 +678,7 @@ public final class DeletedMessagesActivity {
                 boolean checked = messageList.isItemChecked(position);
                 selectionView.setVisibility(selectionMode ? View.VISIBLE : View.GONE);
                 selectionView.setChecked(checked);
+                row.setPadding(selectionMode ? Dim.dp8 : Dim.dp16, Dim.dp12, Dim.dp16, Dim.dp12);
                 row.setActivated(checked);
 
                 return row;

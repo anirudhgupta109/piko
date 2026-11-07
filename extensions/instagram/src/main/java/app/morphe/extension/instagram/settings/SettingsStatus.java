@@ -192,6 +192,10 @@ public class SettingsStatus {
     public static void disableDiscoverPeople() {
         disableDiscoverPeople = true;
     }
+    public static boolean hideLikes = false;
+    public static void hideLikes() {
+        hideLikes = true;
+    }
     public static boolean hideShareButton = false;
     public static void hideShareButton() {
         hideShareButton = true;
@@ -205,7 +209,7 @@ public class SettingsStatus {
         hideReshareButton = true;
     }
     public static boolean distractionFreeSection() {
-        return (hideReelsFollowButton || disableDoubleTapLike || hideHiddenRequests || hideNotesTray || disableHighlights || disableStories || disableExplore || disableComments || hideStoriesTray || limitFollowingFeed || hideFeedPosts || disableVideoAutoplay || disableDiscoverPeople || hideGroupCreationOnSharesheet || hideReshareButton || hideSaveButtons || hideShareButton || disableReelsScrolling || disableSwipeToCreate || focusLock);
+        return (hideReelsFollowButton || disableDoubleTapLike || hideHiddenRequests || hideNotesTray || disableHighlights || disableStories || disableExplore || disableComments || hideStoriesTray || limitFollowingFeed || hideFeedPosts || disableVideoAutoplay || disableDiscoverPeople || hideGroupCreationOnSharesheet || hideReshareButton || hideSaveButtons || hideLikes || hideShareButton || disableReelsScrolling || disableSwipeToCreate || focusLock);
     }
 
     //Misc section.
@@ -219,6 +223,8 @@ public class SettingsStatus {
     public static void followBackIndicator() { followBackIndicator = true; }
     public static boolean followListNonFollowerBadge = false;
     public static void followListNonFollowerBadge() { followListNonFollowerBadge = true; }
+    public static boolean resumeReelsAfterScrolling = false;
+    public static void resumeReelsAfterScrolling() { resumeReelsAfterScrolling = true; }
     public static boolean improveImageViewing = false;
     public static void improveImageViewing() {
         improveImageViewing = true;
@@ -235,7 +241,7 @@ public class SettingsStatus {
     public static void moreOptionsOnPost() { moreOptionsOnPost = true; }
     public static boolean moreOptionsOnProfile = false;
     public static void moreOptionsOnProfile() { moreOptionsOnProfile = true; }
-    public static boolean miscSection() {return ( moreOptionsOnProfile || moreOptionsOnPost || changeLikeAnimation || unlockPlusBenefits || removeEmptyBottomSpace || copyCommentButton || improveImageViewing || disableAnalytics || followBackIndicator || followListNonFollowerBadge || customFont);}
+    public static boolean miscSection() {return ( moreOptionsOnProfile || moreOptionsOnPost || changeLikeAnimation || unlockPlusBenefits || removeEmptyBottomSpace || copyCommentButton || improveImageViewing || resumeReelsAfterScrolling || disableAnalytics || followBackIndicator || followListNonFollowerBadge || customFont);}
 
     //Font section.
     public static boolean customFont = false;
@@ -313,8 +319,10 @@ public class SettingsStatus {
         FLAGS.put(str("piko_copy_comment"),SettingsStatus.copyCommentButton);
         FLAGS.put(str("piko_hide_reshare_button"),SettingsStatus.hideReshareButton);
         FLAGS.put(str("piko_hide_save_buttons"), SettingsStatus.hideSaveButtons);
+        FLAGS.put(str("piko_hide_likes"), SettingsStatus.hideLikes);
         FLAGS.put(str("piko_hide_share_button"), SettingsStatus.hideShareButton);
         FLAGS.put(str("piko_improve_image_viewing"),SettingsStatus.improveImageViewing);
+        FLAGS.put(str("piko_resume_reels_after_scrolling"), SettingsStatus.resumeReelsAfterScrolling);
         FLAGS.put(str("piko_unlimited_replays"),SettingsStatus.unlimitedReplaysOnEphemeralMedia);
         FLAGS.put(str("piko_disable_disappearing_messages_gesture"), SettingsStatus.disableDisappearingMessagesGesture);
 

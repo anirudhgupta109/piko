@@ -605,6 +605,15 @@ public class ScreenBuilder {
                     Settings.HIDE_REELS_FOLLOW_BUTTON
             );
         }
+        if (SettingsStatus.hideLikes) {
+            addPreference(
+                    helper.switchPreference(
+                            str("piko_hide_likes"),
+                            "",
+                            Settings.HIDE_LIKES
+                    )
+            );
+        }
         if (SettingsStatus.hideShareButton) {
             addPreference(
                     helper.switchPreference(
@@ -616,10 +625,10 @@ public class ScreenBuilder {
         }
         if (SettingsStatus.hideSaveButtons) {
             addPreference(
-                    helper.switchPreference(
+                    helper.multiSelectListPref(
                             str("piko_hide_save_buttons"),
                             "",
-                            Settings.HIDE_SAVE_BUTTONS
+                            Settings.HIDE_SAVE_BUTTON_SURFACES
                     )
             );
         }
@@ -820,6 +829,13 @@ public class ScreenBuilder {
                             Settings.FOLLOW_LIST_NON_FOLLOWER_BADGE
                     )
             );
+        }
+        if (SettingsStatus.resumeReelsAfterScrolling) {
+            addPreference(helper.switchPreference(
+                    str("piko_resume_reels_after_scrolling"),
+                    str("piko_resume_reels_after_scrolling_desc"),
+                    Settings.RESUME_REELS_AFTER_SCROLLING
+            ));
         }
         if (SettingsStatus.improveImageViewing) {
             addPreference(
