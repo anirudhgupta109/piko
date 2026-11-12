@@ -17,7 +17,7 @@ import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructionsWithLabels
 import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
 import app.morphe.patcher.opcode
-import app.morphe.patcher.patch.bytecodePatch
+import app.morphe.patcher.patch.patch
 import app.morphe.patcher.util.smali.ExternalLabel
 import app.morphe.util.indexOfFirstInstruction
 import com.android.tools.smali.dexlib2.Opcode
@@ -33,7 +33,7 @@ internal object ReelItemTimestampFormatMethodFingerprint : Fingerprint(
 
 @Suppress("unused")
 val customiseStoryTimestampPatch =
-    bytecodePatch(
+    patch(
         name = "Customise story timestamp",
         description = "Customise the timestamp that shows when the story was posted",
     ) {
