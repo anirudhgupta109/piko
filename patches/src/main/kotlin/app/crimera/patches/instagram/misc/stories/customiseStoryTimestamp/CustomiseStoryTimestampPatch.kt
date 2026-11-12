@@ -17,6 +17,7 @@ import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructionsWithLabels
 import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
 import app.morphe.patcher.opcode
+import app.morphe.patcher.patch.mutableClassDefBy
 import app.morphe.patcher.patch.patch
 import app.morphe.patcher.util.smali.ExternalLabel
 import app.morphe.util.indexOfFirstInstruction
@@ -43,7 +44,7 @@ val customiseStoryTimestampPatch =
 
         execute {
             val reelItemClassName = "Lcom/instagram/model/reels/ReelItem;"
-            val reelItemMediaField = mutableClassDefBy { it.type == reelItemClassName }.fields.last { it.type == MEDIA_CLASS_NAME }
+            val reelItemMediaField = mutableClassDefBy(reelItemClassName).fields.last { it.type == MEDIA_CLASS_NAME }
 
             ReelItemTimestampFormatMethodFingerprint.method.apply {
                 val longToDoubleIndex = ReelItemTimestampFormatMethodFingerprint.instructionMatches.first().index
