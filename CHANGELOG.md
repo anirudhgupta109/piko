@@ -1,3 +1,5 @@
+Release v1.0.0-dev.1
+
 ## [3.12.0-dev.3](https://github.com/crimera/piko/compare/v3.12.0-dev.2...v3.12.0-dev.3) (2026-11-17)
 
 ### 🐛 Bug Fixes
