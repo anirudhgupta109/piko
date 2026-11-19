@@ -6,9 +6,9 @@
     <string name="piko_hide_suggested_content">隱藏建議內容</string>
     <string name="piko_hide_suggested_content_desc">隱藏推薦的限時動態、Reels 和 Threads（推薦貼文仍會顯示）。</string>
     <!-- Developer Options Section -->
-    <string name="piko_category_dev_options">開發者選項</string>
-    <string name="piko_enable_dev_options">啟用開發者選項</string>
-    <string name="piko_enable_dev_options_desc">長按主畫面圖示來開啟開發者選項</string>
+    <string name="piko_category_dev_options">開發人員選項</string>
+    <string name="piko_enable_dev_options">啟用開發人員選項</string>
+    <string name="piko_enable_dev_options_desc">長按主畫面圖示來開啟開發人員選項</string>
     <string name="piko_directly_open_metaconfig">直接開啟 MetaConfig 設定覆蓋</string>
     <string name="piko_directly_open_metaconfig_desc">長按主頁圖示可直接開啟 MetaConfig 覆寫設定</string>
     <string name="piko_export_dev_overrides">匯出設定覆蓋</string>
@@ -16,7 +16,7 @@
     <string name="piko_import_id_mapping">匯入映射文件</string>
     <string name="piko_download_id_mapping">下載映射文件</string>
     <string name="piko_missing_mapping_file">缺少映射文件</string>
-    <string name="piko_missing_mapping_file_desc">如果沒有映射文件，開發者選項中的名稱將無法正確顯示。您要下載嗎？</string>
+    <string name="piko_missing_mapping_file_desc">如果沒有映射文件，開發人員選項中的名稱將無法正確顯示。您要下載嗎？</string>
     <!-- Links Section -->
     <string name="piko_category_links">連結</string>
     <string name="piko_open_links_externally">在外部開啟連結</string>
@@ -219,6 +219,13 @@
     <string name="piko_dash_audio_aac_lc_desc">將 DASH 下載內容的 xHE-AAC 音訊重新編碼為廣泛相容的 192 kbps AAC-LC 格式</string>
     <string name="piko_embed_download_metadata">嵌入影片詮釋資料</string>
     <string name="piko_embed_download_metadata_desc">將內文、貼文連結、創作者與上傳日期新增至下載的 MP4 檔案中</string>
+    <string name="piko_download_conflict_policy">當媒體已存在時</string>
+    <string name="piko_download_conflict_policy_desc">適用於所選下載資料夾中的同名檔案</string>
+    <string name="piko_download_conflict_rename">以新名稱儲存</string>
+    <string name="piko_download_conflict_skip">略過已下載的媒體</string>
+    <string name="piko_download_conflict_overwrite">覆寫現有檔案</string>
+    <string name="piko_download_media_exists">媒體已存在</string>
+    <string name="piko_download_media_in_progress">媒體已在下載中</string>
     <string name="piko_download_file_name_template">檔案名稱格式</string>
     <string name="piko_download_file_name_template_invalid">無效的檔案名稱</string>
     <string name="piko_download_file_name_insert_token">插入 %1$s</string>
@@ -370,7 +377,7 @@
     <string name="piko_use_system_font_desc">只有在沒有新增自訂字型的情況下啟用，新增自訂字型將會關閉這個選項。</string>
     <!-- Developer Options Section -->
     <string name="piko_category_rec_flags">推薦標記</string>
-    <string name="piko_category_rec_flags_desc">社群推薦的開發者標記</string>
+    <string name="piko_category_rec_flags_desc">社群推薦的開發人員標記</string>
     <string name="piko_rec_flags_read_error">讀取快取的標記檔案失敗</string>
     <string name="piko_rec_flags_no_file">找不到推薦的標記檔案</string>
     <string name="piko_rec_flags_refresh_file">重新整理標記</string>

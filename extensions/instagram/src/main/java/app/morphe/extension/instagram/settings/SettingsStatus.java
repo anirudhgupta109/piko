@@ -35,7 +35,7 @@ public class SettingsStatus {
     public static boolean storyFilters = false;
     public static void storyFilters(){storyFilters = true;}
     public static boolean filterContentSection(){return storyFilters; }
-    
+
     //Ghost section.
     public static boolean viewStoriesAnonymously = false;
     public static void viewStoriesAnonymously() {
@@ -80,7 +80,9 @@ public class SettingsStatus {
     public static void inboxLock() { inboxLock = true; }
     public static boolean hiddenChats = false;
     public static void hiddenChats() { hiddenChats = true; }
-    public static boolean dmSection(){ return markChatAsRead || unlimitedReplaysOnEphemeralMedia || saveDeletedMessages || inboxLock || hiddenChats || disableDisappearingMessagesGesture ;}
+    public static boolean sendKeyboardGifs = false;
+    public static void sendKeyboardGifs() { sendKeyboardGifs = true; }
+    public static boolean dmSection(){ return markChatAsRead || unlimitedReplaysOnEphemeralMedia || saveDeletedMessages || inboxLock || hiddenChats || disableDisappearingMessagesGesture || sendKeyboardGifs ;}
 
     //Story section
     public static boolean customiseStoryTimestamp = false;
@@ -176,7 +178,7 @@ public class SettingsStatus {
         focusLock = true;
     }
     public static boolean disableVideoAutoplay = false;
-    public static void disableVideoAutoplay() { disableVideoAutoplay = true;    
+    public static void disableVideoAutoplay() { disableVideoAutoplay = true;
     }
     public static boolean disableDoubleTapLike = false;
     public static void disableDoubleTapLike() {
@@ -241,7 +243,7 @@ public class SettingsStatus {
     public static boolean customFont = false;
     public static void customFont() { customFont = true; }
     public static boolean fontSection(){ return customFont; }
-    
+
     //Download section.
     public static boolean downloadMedia = false;
     public static void downloadMedia() {downloadMedia = true;}
@@ -266,7 +268,7 @@ public class SettingsStatus {
     public static void instantsDownload() {
         instantsDownload = true;
     }
-    
+
     //Navigation Section
     public static boolean hideNavigationButtons = false;
     public static void hideNavigationButtons() { hideNavigationButtons = true; }
@@ -310,6 +312,7 @@ public class SettingsStatus {
         FLAGS.put(str("piko_resume_reels_after_scrolling"), SettingsStatus.resumeReelsAfterScrolling);
         FLAGS.put(str("piko_unlimited_replays"),SettingsStatus.unlimitedReplaysOnEphemeralMedia);
         FLAGS.put(str("piko_disable_disappearing_messages_gesture"), SettingsStatus.disableDisappearingMessagesGesture);
+        FLAGS.put(str("piko_send_keyboard_gifs"), SettingsStatus.sendKeyboardGifs);
 
         FLAGS.put(str("piko_customise_story_timestamp"),SettingsStatus.customiseStoryTimestamp);
         FLAGS.put(str("piko_disable_story_flipping"),SettingsStatus.disableStoryFlipping);
